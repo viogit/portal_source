@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "g_local.h"
 
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 /*
 ==============================================================================
 
@@ -310,6 +312,8 @@ void Svcmd_RemoveIP_f (void)
 
 	G_Printf ( "Didn't find %s.\n", str );
 }
+/* xDiloc - no longer support */
+#endif
 
 /*
 ===================
@@ -453,6 +457,19 @@ qboolean	ConsoleCommand( void ) {
 
 	trap_Argv( 0, cmd, sizeof( cmd ) );
 
+#ifdef	VIOL_VM
+	// xDiloc - config
+	if (Q_stricmp(cmd, "load") == 0) {
+		Vio_ConfigCmd_f();
+		return qtrue;
+	}
+
+	if (Q_stricmp(cmd, "reload") == 0) {
+		Vio_ConfigInit_f(vio_config.string);
+		return qtrue;
+	}
+#endif
+
 	if ( Q_stricmp (cmd, "entitylist") == 0 ) {
 		Svcmd_EntityList_f();
 		return qtrue;
@@ -483,6 +500,8 @@ qboolean	ConsoleCommand( void ) {
 		return qtrue;
 	}
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 	if (Q_stricmp (cmd, "addip") == 0) {
 		Svcmd_AddIP_f();
 		return qtrue;
@@ -497,6 +516,8 @@ qboolean	ConsoleCommand( void ) {
 		trap_SendConsoleCommand( EXEC_NOW, "g_banIPs\n" );
 		return qtrue;
 	}
+/* xDiloc - no longer support */
+#endif
 
 	if (g_dedicated.integer) {
 		if (Q_stricmp (cmd, "say") == 0) {

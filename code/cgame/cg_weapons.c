@@ -672,6 +672,16 @@ void CG_RegisterWeapon( int weaponNum ) {
 	}
 
 	switch ( weaponNum ) {
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	case WP_PORTALGUN:
+		weaponInfo->handsModel = trap_R_RegisterModel("models/weapons2/portalgun/portalgun_hand.md3");
+		weaponInfo->flashSound[0] = trap_S_RegisterSound("sound/weapons/portalgun/portalgun_blue.wav", qfalse);
+		weaponInfo->flashSound[1] = trap_S_RegisterSound("sound/weapons/portalgun/portalgun_orange.wav", qfalse);
+		break;
+#endif
+
 	case WP_GAUNTLET:
 		MAKERGB( weaponInfo->flashDlightColor, 0.6f, 0.6f, 1.0f );
 		weaponInfo->firingSound = trap_S_RegisterSound( "sound/weapons/melee/fstrun.wav", qfalse );

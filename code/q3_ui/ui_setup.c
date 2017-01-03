@@ -43,7 +43,11 @@ SETUP MENU
 #define ID_CUSTOMIZECONTROLS	11
 #define ID_SYSTEMCONFIG			12
 #define ID_GAME					13
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 #define ID_CDKEY				14
+/* xDiloc - no longer support */
+#endif
 #define ID_LOAD					15
 #define ID_SAVE					16
 #define ID_DEFAULTS				17
@@ -60,7 +64,11 @@ typedef struct {
 	menutext_s		setupcontrols;
 	menutext_s		setupsystem;
 	menutext_s		game;
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	menutext_s		cdkey;
+/* xDiloc - no longer support */
+#endif
 //	menutext_s		load;
 //	menutext_s		save;
 	menutext_s		defaults;
@@ -123,9 +131,13 @@ static void UI_SetupMenu_Event( void *ptr, int event ) {
 		UI_PreferencesMenu();
 		break;
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	case ID_CDKEY:
 		UI_CDKeyMenu();
 		break;
+/* xDiloc - no longer support */
+#endif
 
 //	case ID_LOAD:
 //		UI_LoadConfigMenu();
@@ -227,6 +239,8 @@ static void UI_SetupMenu_Init( void ) {
 	setupMenuInfo.game.color						= color_red;
 	setupMenuInfo.game.style						= UI_CENTER;
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	y += SETUP_MENU_VERTICAL_SPACING;
 	setupMenuInfo.cdkey.generic.type				= MTYPE_PTEXT;
 	setupMenuInfo.cdkey.generic.flags				= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
@@ -237,6 +251,8 @@ static void UI_SetupMenu_Init( void ) {
 	setupMenuInfo.cdkey.string						= "CD Key";
 	setupMenuInfo.cdkey.color						= color_red;
 	setupMenuInfo.cdkey.style						= UI_CENTER;
+/* xDiloc - no longer support */
+#endif
 
 	if( !trap_Cvar_VariableValue( "cl_paused" ) ) {
 #if 0
@@ -293,7 +309,12 @@ static void UI_SetupMenu_Init( void ) {
 	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.setupcontrols );
 	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.setupsystem );
 	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.game );
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.cdkey );
+/* xDiloc - no longer support */
+#endif
+
 //	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.load );
 //	Menu_AddItem( &setupMenuInfo.menu, &setupMenuInfo.save );
 	if( !trap_Cvar_VariableValue( "cl_paused" ) ) {

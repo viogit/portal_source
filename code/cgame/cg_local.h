@@ -647,6 +647,17 @@ typedef struct {
 // Other media that can be tied to clients, weapons, or items are
 // stored in the clientInfo_t, itemInfo_t, weaponInfo_t, and powerupInfo_t
 typedef struct {
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	qhandle_t	portal_blue;
+	qhandle_t	portal_orange;
+	qhandle_t	portal_black;
+
+	// xDiloc - bbox
+	qhandle_t	bbox;
+	qhandle_t	bbox_nocull;
+#endif
+
 	qhandle_t	charsetShader;
 	qhandle_t	charsetProp;
 	qhandle_t	charsetPropGlow;
@@ -1082,6 +1093,15 @@ extern	centity_t		cg_entities[MAX_GENTITIES];
 extern	weaponInfo_t	cg_weapons[MAX_WEAPONS];
 extern	itemInfo_t		cg_items[MAX_ITEMS];
 extern	markPoly_t		cg_markPolys[MAX_MARK_POLYS];
+
+#ifdef	VIOL_VM
+// xDiloc - main
+extern	vmCvar_t		vio_fxportal;
+extern	vmCvar_t		vio_drawups;
+extern	vmCvar_t		vio_drawmovement;
+extern	vmCvar_t		vio_drawaccel;
+extern	vmCvar_t		vio_drawbbox;
+#endif
 
 extern	vmCvar_t		cg_centertime;
 extern	vmCvar_t		cg_runpitch;

@@ -321,8 +321,23 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 	client = ent->client;
 
 	if ( client->sess.spectatorState != SPECTATOR_FOLLOW ) {
+#ifdef	VIOL_VM
+		// xDiloc - spectator clip
+		if (vio.specclip == 1) {
+			client->ps.pm_type = PM_NOCLIP;
+		} else {
+			client->ps.pm_type = PM_SPECTATOR;
+		}
+
+		// xDiloc - fix faster than normal
+		client->ps.speed = vio.specspeed;
+
+		// xDiloc - clear powerups
+		memset(ent->client->ps.powerups, 0, sizeof(ent->client->ps.powerups));
+#else
 		client->ps.pm_type = PM_SPECTATOR;
 		client->ps.speed = 400;	// faster than normal
+#endif
 
 		// set up for pmove
 		memset (&pm, 0, sizeof(pm));
@@ -546,6 +561,12 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 		switch ( event ) {
 		case EV_FALL_MEDIUM:
 		case EV_FALL_FAR:
+#ifdef	VIOL_VM
+			// xDiloc - falldamage
+			if (vio.falldamage == 0) {
+				break;
+			}
+#endif
 			if ( ent->s.eType != ET_PLAYER ) {
 				break;		// not in the player model
 			}
@@ -562,8 +583,20 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 			break;
 
 		case EV_FIRE_WEAPON:
+#ifdef	VIOL_VM
+			// xDiloc - altfire
+			FireWeapon(ent, qfalse);
+#else
 			FireWeapon( ent );
+#endif
 			break;
+
+#ifdef	VIOL_VM
+		case EV_ALTFIRE_WEAPON:
+			// xDiloc - altfire
+			FireWeapon(ent, qtrue);
+			break;
+#endif
 
 		case EV_USE_ITEM1:		// teleporter
 			// drop flags in CTF
@@ -911,6 +944,11 @@ void ClientThink_real( gentity_t *ent ) {
 	pm.pmove_msec = pmove_msec.integer;
 
 	VectorCopy( client->ps.origin, client->oldOrigin );
+
+#ifdef	VIOL_VM
+	// xDiloc - teleport player
+	VectorCopy(client->ps.velocity, client->oldVelocity);
+#endif
 
 #ifdef MISSIONPACK
 		if (level.intermissionQueued != 0 && g_singlePlayer.integer) {

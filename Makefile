@@ -12,28 +12,28 @@ ifeq ($(COMPILE_PLATFORM),sunos)
 endif
 
 ifndef BUILD_STANDALONE
-  BUILD_STANDALONE =
+  BUILD_STANDALONE = 0
 endif
 ifndef BUILD_CLIENT
-  BUILD_CLIENT     =
+  BUILD_CLIENT     = 0
 endif
 ifndef BUILD_SERVER
-  BUILD_SERVER     =
+  BUILD_SERVER     = 0
 endif
 ifndef BUILD_GAME_SO
-  BUILD_GAME_SO    =
+  BUILD_GAME_SO    = 0
 endif
 ifndef BUILD_GAME_QVM
-  BUILD_GAME_QVM   =
+  BUILD_GAME_QVM   = 1
 endif
 ifndef BUILD_BASEGAME
-  BUILD_BASEGAME =
+  BUILD_BASEGAME = 1
 endif
 ifndef BUILD_MISSIONPACK
-  BUILD_MISSIONPACK=
+  BUILD_MISSIONPACK= 0
 endif
 ifndef BUILD_RENDERER_OPENGL2
-  BUILD_RENDERER_OPENGL2=
+  BUILD_RENDERER_OPENGL2= 0
 endif
 
 #############################################################################
@@ -2267,7 +2267,10 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_snapshot.o \
   $(B)/$(BASEGAME)/cgame/cg_view.o \
   $(B)/$(BASEGAME)/cgame/cg_weapons.o \
+  $(B)/$(BASEGAME)/cgame/vio_effects.o \
+  $(B)/$(BASEGAME)/cgame/vio_debug.o \
   \
+  $(B)/$(BASEGAME)/qcommon/vio_data.o \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
@@ -2280,7 +2283,7 @@ $(B)/$(BASEGAME)/cgame$(SHLIBNAME): $(Q3CGOBJ)
 
 $(B)/$(BASEGAME)/vm/cgame.qvm: $(Q3CGVMOBJ) $(CGDIR)/cg_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
-	$(Q)$(Q3ASM) -o $@ $(Q3CGVMOBJ) $(CGDIR)/cg_syscalls.asm
+	$(Q)$(Q3ASM) -vq3 -o $@ $(Q3CGVMOBJ) $(CGDIR)/cg_syscalls.asm
 
 #############################################################################
 ## MISSIONPACK CGAME
@@ -2365,7 +2368,11 @@ Q3GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_trigger.o \
   $(B)/$(BASEGAME)/game/g_utils.o \
   $(B)/$(BASEGAME)/game/g_weapon.o \
+  $(B)/$(BASEGAME)/game/vio_config.o \
+  $(B)/$(BASEGAME)/game/vio_portal.o \
+  $(B)/$(BASEGAME)/game/vio_target.o \
   \
+  $(B)/$(BASEGAME)/qcommon/vio_data.o \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
@@ -2378,7 +2385,7 @@ $(B)/$(BASEGAME)/qagame$(SHLIBNAME): $(Q3GOBJ)
 
 $(B)/$(BASEGAME)/vm/qagame.qvm: $(Q3GVMOBJ) $(GDIR)/g_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
-	$(Q)$(Q3ASM) -o $@ $(Q3GVMOBJ) $(GDIR)/g_syscalls.asm
+	$(Q)$(Q3ASM) -vq3 -o $@ $(Q3GVMOBJ) $(GDIR)/g_syscalls.asm
 
 #############################################################################
 ## MISSIONPACK GAME
@@ -2443,7 +2450,6 @@ Q3UIOBJ_ = \
   $(B)/$(BASEGAME)/ui/bg_lib.o \
   $(B)/$(BASEGAME)/ui/ui_addbots.o \
   $(B)/$(BASEGAME)/ui/ui_atoms.o \
-  $(B)/$(BASEGAME)/ui/ui_cdkey.o \
   $(B)/$(BASEGAME)/ui/ui_cinematics.o \
   $(B)/$(BASEGAME)/ui/ui_confirm.o \
   $(B)/$(BASEGAME)/ui/ui_connect.o \
@@ -2480,6 +2486,7 @@ Q3UIOBJ_ = \
   $(B)/$(BASEGAME)/ui/ui_teamorders.o \
   $(B)/$(BASEGAME)/ui/ui_video.o \
   \
+  $(B)/$(BASEGAME)/qcommon/vio_data.o \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
@@ -2492,7 +2499,7 @@ $(B)/$(BASEGAME)/ui$(SHLIBNAME): $(Q3UIOBJ)
 
 $(B)/$(BASEGAME)/vm/ui.qvm: $(Q3UIVMOBJ) $(UIDIR)/ui_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
-	$(Q)$(Q3ASM) -o $@ $(Q3UIVMOBJ) $(UIDIR)/ui_syscalls.asm
+	$(Q)$(Q3ASM) -vq3 -o $@ $(Q3UIVMOBJ) $(UIDIR)/ui_syscalls.asm
 
 #############################################################################
 ## MISSIONPACK UI

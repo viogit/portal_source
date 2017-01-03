@@ -812,6 +812,40 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		CG_FireWeapon( cent );
 		break;
 
+#ifdef	VIOL_VM
+	// xDiloc - altfire
+	case EV_ALTFIRE_WEAPON:
+		DEBUGNAME("EV_ALTFIRE_WEAPON");
+		CG_FireWeapon(cent);
+		break;
+
+	// xDiloc - portalgun
+	case EV_PORTAL_ORANGE:
+		DEBUGNAME("EV_PORTAL_ORANGE");
+		if (vio_fxportal.integer == 1) {
+			CG_PortalExplode(cent->lerpOrigin, cgs.media.portal_orange);
+		}
+		if (vio_fxportal.integer == 2) {
+			CG_GibPlayer(cent->lerpOrigin);
+		}
+		break;
+	case EV_PORTAL_BLUE:
+		DEBUGNAME("EV_PORTAL_BLUE");
+		if (vio_fxportal.integer == 1) {
+			CG_PortalExplode(cent->lerpOrigin, cgs.media.portal_blue);
+		}
+		if (vio_fxportal.integer == 2) {
+			CG_GibPlayer(cent->lerpOrigin);
+		}
+		break;
+	case EV_PORTAL_CLOSE:
+		DEBUGNAME("EV_PORTAL_CLOSE");
+		if (vio_fxportal.integer == 1) {
+			CG_PortalExplode(cent->lerpOrigin, cgs.media.portal_black);
+		}
+		break;
+#endif
+
 	case EV_USE_ITEM0:
 		DEBUGNAME("EV_USE_ITEM0");
 		CG_UseItem( cent );

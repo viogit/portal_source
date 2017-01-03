@@ -75,11 +75,44 @@ Toss the weapon and powerups for the killed player
 */
 void TossClientItems( gentity_t *self ) {
 	gitem_t		*item;
+#ifndef	VIOL_VM
 	int			weapon;
+#endif
 	float		angle;
 	int			i;
 	gentity_t	*drop;
 
+#ifdef	VIOL_VM
+	// xDiloc - doesn't drop weapons
+	if (vio.dropweapon == 1) {
+		int	weapon;
+
+		// drop the weapon if not a gauntlet or machinegun
+		weapon = self->s.weapon;
+
+		// make a special check to see if they are changing to a new
+		// weapon that isn't the mg or gauntlet.  Without this, a client
+		// can pick up a weapon, be killed, and not drop the weapon because
+		// their weapon change hasn't completed yet and they are still holding the MG.
+		if (weapon == WP_MACHINEGUN || weapon == WP_GRAPPLING_HOOK) {
+			if (self->client->ps.weaponstate == WEAPON_DROPPING) {
+				weapon = self->client->pers.cmd.weapon;
+			}
+			if (!(self->client->ps.stats[STAT_WEAPONS] & (1 << weapon))) {
+				weapon = WP_NONE;
+			}
+		}
+
+		if (weapon > WP_MACHINEGUN
+		 && weapon != WP_GRAPPLING_HOOK
+		 && self->client->ps.ammo[weapon]) {
+			// find the item type for this weapon
+			item = BG_FindItemForWeapon(weapon);
+			// spawn the item
+			Drop_Item(self, item, 0);
+		}
+	}
+#else
 	// drop the weapon if not a gauntlet or machinegun
 	weapon = self->s.weapon;
 
@@ -104,6 +137,7 @@ void TossClientItems( gentity_t *self ) {
 		// spawn the item
 		Drop_Item( self, item, 0 );
 	}
+#endif
 
 	// drop all the powerups if not in teamplay
 	if ( g_gametype.integer != GT_TEAM ) {
@@ -447,6 +481,11 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		return;
 	}
 
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	G_Portal_Clear(self, PORTAL_ALL);
+#endif
+
 	// check for an almost capture
 	CheckAlmostCapture( self, attacker );
 	// check for a player that almost brought in cubes
@@ -589,6 +628,10 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	self->takedamage = qtrue;	// can still be gibbed
 
+#ifdef	VIOL_VM
+	self->client->sess.lastWeapon = self->s.weapon;
+#endif
+
 	self->s.weapon = WP_NONE;
 	self->s.powerups = 0;
 	self->r.contents = CONTENTS_CORPSE;
@@ -605,7 +648,11 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	// don't allow respawn until the death anim is done
 	// g_forcerespawn may force spawning at some later time
+#ifdef	VIOL_VM
+	self->client->respawnTime = level.time + vio.respawntime;
+#else
 	self->client->respawnTime = level.time + 1700;
+#endif
 
 	// remove powerups
 	memset( self->client->ps.powerups, 0, sizeof(self->client->ps.powerups) );
@@ -953,6 +1000,12 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		}
 		damage *= 0.5;
 	}
+
+#ifdef	VIOL_VM
+	if (targ == attacker && vio.selfdamage == 0) {
+		return;
+	}
+#endif
 
 	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)
 	if ( attacker->client && client

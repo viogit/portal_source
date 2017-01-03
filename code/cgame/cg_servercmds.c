@@ -353,6 +353,12 @@ static void CG_ConfigStringModified( void ) {
 		}
 #endif
 	}
+#ifdef	VIOL_VM
+	// xDiloc - get qagame stuff
+	else if (num == 31) {
+		sscanf(str, "%i %i", &vio.physic, &vio.falldamage);
+	}
+#endif
 	else if ( num == CS_SHADERSTATE ) {
 		CG_ShaderStateChanged();
 	}

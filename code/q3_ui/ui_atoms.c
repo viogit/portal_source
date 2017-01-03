@@ -789,6 +789,8 @@ qboolean UI_IsFullscreen( void ) {
 	return qfalse;
 }
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 static void NeedCDAction( qboolean result ) {
 	if ( !result ) {
 		trap_Cmd_ExecuteText( EXEC_APPEND, "quit\n" );
@@ -800,6 +802,8 @@ static void NeedCDKeyAction( qboolean result ) {
 		trap_Cmd_ExecuteText( EXEC_APPEND, "quit\n" );
 	}
 }
+/* xDiloc - no longer support */
+#endif
 
 void UI_SetActiveMenu( uiMenuCommand_t menu ) {
 	// this should be the ONLY way the menu system is brought up
@@ -813,12 +817,16 @@ void UI_SetActiveMenu( uiMenuCommand_t menu ) {
 	case UIMENU_MAIN:
 		UI_MainMenu();
 		return;
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	case UIMENU_NEED_CD:
 		UI_ConfirmMenu( "Insert the CD", 0, NeedCDAction );
 		return;
 	case UIMENU_BAD_CD_KEY:
 		UI_ConfirmMenu( "Bad CD Key", 0, NeedCDKeyAction );
 		return;
+/* xDiloc - no longer support */
+#endif
 	case UIMENU_INGAME:
 		/*
 		//GRank
@@ -981,7 +989,11 @@ void UI_Cache_f( void ) {
 //	UI_LoadConfig_Cache();
 //	UI_SaveConfigMenu_Cache();
 	UI_BotSelectMenu_Cache();
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	UI_CDKeyMenu_Cache();
+/* xDiloc - no longer support */
+#endif
 	UI_ModsMenu_Cache();
 
 }
@@ -1038,10 +1050,14 @@ qboolean UI_ConsoleCommand( int realTime ) {
 		return qtrue;
 	}
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 	if ( Q_stricmp (cmd, "ui_cdkey") == 0 ) {
 		UI_CDKeyMenu_f();
 		return qtrue;
 	}
+/* xDiloc - no longer support */
+#endif
 
 	return qfalse;
 }

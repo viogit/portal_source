@@ -444,6 +444,21 @@ static void CG_Camera_f( void ) {
 }
 */
 
+#ifdef	VIOL_VM
+static void CG_GameHelp_f(void) {
+	CG_Printf("\n");
+	CG_Printf(" weapon binds:\n");
+	CG_Printf(" \\bind ^5<key>  ^7+button5 ^5- ^7Grapple Hook^7\n");
+	CG_Printf(" \\bind ^5mouse2 ^7+button6 ^5- ^7PortalGun^7\n");
+	CG_Printf("\n");
+}
+
+static void CG_DevInfo_f(void) {
+	// xDiloc - check qagame stuff
+	Com_Printf("cgame vio.physic %i\n", vio.physic);
+	Com_Printf("cgame vio.falldamage %i\n", vio.falldamage);
+}
+#endif
 
 typedef struct {
 	char	*cmd;
@@ -451,6 +466,10 @@ typedef struct {
 } consoleCommand_t;
 
 static consoleCommand_t	commands[] = {
+#ifdef	VIOL_VM
+	{ "help", CG_GameHelp_f },
+	{ "dev", CG_DevInfo_f },
+#endif
 	{ "testgun", CG_TestGun_f },
 	{ "testmodel", CG_TestModel_f },
 	{ "nextframe", CG_TestModelNextFrame_f },

@@ -737,6 +737,74 @@ void weapon_proxlauncher_fire (gentity_t *ent) {
 
 #endif
 
+#ifdef	VIOL_VM
+/*
+======================================================================
+PORTAL GUN
+======================================================================
+*/
+
+qboolean is_portalmap(void) {
+	if (!Q_strncmp(mapname.string, "testroom", 8)) {
+//		G_Printf("PORTAL MAP\n");
+		return qtrue;
+	} else {
+//		G_Printf("OFF\n");
+		return qfalse;
+	}
+}
+
+void Portal_Fire(gentity_t *ent, int alt) {
+	trace_t		tr;
+	vec3_t		end;
+	gentity_t	*traceEnt;
+
+	VectorMA(muzzle, 8192 * 16, forward, end);
+	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT);
+
+	// texture fix (i think is sky or something else)
+	if (tr.surfaceFlags & SURF_NOIMPACT) {
+		return;
+	}
+
+	// snap the endpos to integers, but nudged towards the line
+	SnapVectorTowards(tr.endpos, muzzle);
+
+	// effects
+	if (alt) {
+		G_TempEntity(tr.endpos, EV_PORTAL_ORANGE);
+	} else {
+		G_TempEntity(tr.endpos, EV_PORTAL_BLUE);
+	}
+
+	// xDiloc - cant shot player
+	traceEnt = &g_entities[tr.entityNum];
+	if (traceEnt->client) {
+		trap_SendServerCommand(ent - g_entities, va("print \""PREFIX"^7is %s\n\"", traceEnt->client->pers.netname));
+		return;
+	}
+
+	if (is_portalmap()) {
+		if ((tr.surfaceFlags & SURF_NODLIGHT)
+		 || (tr.surfaceFlags & SURF_NOLIGHTMAP)
+		 || !(tr.surfaceFlags & SURF_NOMARKS)) {
+			gentity_t	*te;
+
+			te = G_TempEntity(ent->s.pos.trBase, EV_GENERAL_SOUND);
+			te->s.eventParm = G_SoundIndex("sound/weapons/portalgun/invalid_surface.wav");
+			te->r.svFlags |= SVF_BROADCAST;
+			return;
+		}
+	}
+
+	if (alt) {
+		G_Portal_Create(ent, tr.endpos, tr.plane.normal, PORTAL_ORANGE);
+	} else {
+		G_Portal_Create(ent, tr.endpos, tr.plane.normal, PORTAL_BLUE);
+	}
+}
+#endif
+
 //======================================================================
 
 
@@ -811,7 +879,12 @@ void CalcMuzzlePointOrigin ( gentity_t *ent, vec3_t origin, vec3_t forward, vec3
 FireWeapon
 ===============
 */
+#ifdef	VIOL_VM
+// xDiloc - altfire
+void FireWeapon(gentity_t *ent, qboolean alt) {
+#else
 void FireWeapon( gentity_t *ent ) {
+#endif
 	if (ent->client->ps.powerups[PW_QUAD] ) {
 		s_quadFactor = g_quadfactor.value;
 	} else {
@@ -888,6 +961,14 @@ void FireWeapon( gentity_t *ent ) {
 		Bullet_Fire( ent, CHAINGUN_SPREAD, CHAINGUN_DAMAGE, MOD_CHAINGUN );
 		break;
 #endif
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	case WP_PORTALGUN:
+		Portal_Fire(ent, alt);
+		break;
+#endif
+
 	default:
 // FIXME		G_Error( "Bad ent->s.weapon" );
 		break;

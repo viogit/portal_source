@@ -437,7 +437,10 @@ void Touch_Item (gentity_t *ent, gentity_t *other, trace_t *trace) {
 		return;
 	}
 
+#ifndef	VIOL_VM
+	// xDiloc - no logs
 	G_LogPrintf( "Item: %i %s\n", other->s.number, ent->item->classname );
+#endif
 
 	predict = other->client->pers.predictItemPickup;
 
@@ -806,11 +809,31 @@ ClearRegisteredItems
 ==============
 */
 void ClearRegisteredItems( void ) {
+#ifdef	VIOL_VM
+	int	i;
+#endif
+
 	memset( itemRegistered, 0, sizeof( itemRegistered ) );
 
+#ifdef	VIOL_VM
+	// xDiloc - register weapon_t
+	for (i = WP_GAUNTLET; i < WP_NUM_WEAPONS; i++) {
+		RegisterItem(BG_FindItemForWeapon(i));
+	}
+
+	// xDiloc - register powerup_t
+	for (i = PW_QUAD; i <= PW_FLIGHT; i++) {
+		RegisterItem(BG_FindItemForPowerup(i));
+	}
+
+	// xDiloc - register holdable_t
+	RegisterItem(BG_FindItemForHoldable(HI_TELEPORTER));
+	RegisterItem(BG_FindItemForHoldable(HI_MEDKIT));
+#else
 	// players always start with the base weapon
 	RegisterItem( BG_FindItemForWeapon( WP_MACHINEGUN ) );
 	RegisterItem( BG_FindItemForWeapon( WP_GAUNTLET ) );
+#endif
 #ifdef MISSIONPACK
 	if( g_gametype.integer == GT_HARVESTER ) {
 		RegisterItem( BG_FindItem( "Red Cube" ) );

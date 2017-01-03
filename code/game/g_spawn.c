@@ -181,6 +181,16 @@ void SP_team_neutralobelisk( gentity_t *ent );
 #endif
 void SP_item_botroam( gentity_t *ent ) { }
 
+#ifdef	VIOL_VM
+// xDiloc - defrag
+void SP_target_startTimer(gentity_t *ent);
+void SP_target_stopTimer(gentity_t *ent);
+void SP_target_checkpoint(gentity_t *ent);
+
+// xDiloc - portalgun
+void SP_target_removePortal(gentity_t *ent);
+#endif
+
 spawn_t	spawns[] = {
 	// info entities don't do anything at all, but provide positional
 	// information for things controlled by other processes
@@ -253,6 +263,17 @@ spawn_t	spawns[] = {
 	{"team_neutralobelisk", SP_team_neutralobelisk},
 #endif
 	{"item_botroam", SP_item_botroam},
+
+#ifdef	VIOL_VM
+	// xDiloc - defrag
+	{"target_startTimer", SP_target_startTimer},
+	{"target_stopTimer", SP_target_stopTimer},
+	{"target_checkpoint", SP_target_checkpoint},
+
+	// xDiloc - portalgun
+	{"target_removePortal", SP_target_removePortal},
+	{"target_kill2", SP_target_kill},
+#endif
 
 	{NULL, 0}
 };
@@ -613,6 +634,104 @@ void SP_worldspawn( void ) {
 }
 
 
+#ifdef	VIOL_VM
+qboolean G_ParseSpawnVarsFromFile(char **data) {
+	char	keyname[MAX_TOKEN_CHARS];
+	char	com_token[MAX_TOKEN_CHARS];
+
+	level.numSpawnVars = 0;
+	level.numSpawnVarChars = 0;
+
+	Com_sprintf(com_token, sizeof(com_token), "%s", COM_Parse(data));
+	if (com_token[0] == 0) {
+		return qfalse;
+	}
+
+	if (com_token[0] != '{') {
+		COM_ParseWarning("found '%s' when expecting {", com_token);
+		return qfalse;
+	}
+
+	while (1) {
+		Com_sprintf(keyname, sizeof(keyname), "%s", COM_Parse(data));
+		if (!keyname[0]) {
+			COM_ParseWarning("EOF without closing brace");
+			return qfalse;
+		}
+		if (keyname[0] == '}') {
+			break;
+		}
+
+		Com_sprintf(com_token, sizeof(com_token), "%s", COM_Parse(data));
+		if (!com_token[0]) {
+			COM_ParseWarning("EOF without closing brace");
+			return qfalse;
+		}
+		if (com_token[0] == '}') {
+			COM_ParseWarning("closing brace without data");
+			return qfalse;
+		}
+		if (level.numSpawnVars == MAX_SPAWN_VARS) {
+			COM_ParseWarning("MAX_SPAWN_VARS");
+			return qfalse;
+		}
+
+		level.spawnVars[level.numSpawnVars][0] = G_AddSpawnVarToken(keyname);
+		level.spawnVars[level.numSpawnVars][1] = G_AddSpawnVarToken(com_token);
+		level.numSpawnVars++;
+	}
+
+	return qtrue;
+}
+
+#define MEM_CONFIG	4096
+qboolean G_SpawnEntitiesFromFile(const char *filename, qboolean num) {
+	fileHandle_t	fileHandle;
+	int		len;
+	char		buf[MEM_CONFIG];
+	char		*text;
+
+	len = trap_FS_FOpenFile(filename, &fileHandle, FS_READ);
+	if (!fileHandle) {
+		Com_Printf("cant load: %s\n", filename);
+		return qfalse;
+	}
+
+	if (len <= 0) {
+		Com_Printf("file %s is empty\n", filename);
+		trap_FS_FCloseFile(fileHandle);
+		return qfalse;
+	}
+
+	if (len > MEM_CONFIG) {
+		Com_Printf("file too large: %s is %i, max allowed is %i\n", filename, len, MEM_CONFIG);
+		trap_FS_FCloseFile(fileHandle);
+		return qfalse;
+	}
+
+	// xDiloc - read file
+	trap_FS_Read(buf, len, fileHandle);
+	buf[len] = 0;
+	trap_FS_FCloseFile(fileHandle);
+
+	COM_BeginParseSession(filename);
+	text = buf;
+
+	// xDiloc - parse
+	if (num) {
+		if (!G_ParseSpawnVarsFromFile(&text)) {
+			COM_ParseWarning("SpawnEntities: no entities");
+		}
+		SP_worldspawn();
+	}
+	while(G_ParseSpawnVarsFromFile(&text)) {
+		G_SpawnGEntityFromSpawnVars();
+	}
+
+	return qtrue;
+}
+#endif
+
 /*
 ==============
 G_SpawnEntitiesFromString
@@ -625,6 +744,9 @@ void G_SpawnEntitiesFromString( void ) {
 	level.spawning = qtrue;
 	level.numSpawnVars = 0;
 
+#ifdef	VIOL_VM
+	if (vio_enity.integer == 0 || !G_SpawnEntitiesFromFile(va("enity/%s.ents", mapname.string), qtrue)) {
+#endif
 	// the worldspawn is not an actual entity, but it still
 	// has a "spawn" function to perform any global setup
 	// needed by a level (setting configstrings or cvars, etc)
@@ -637,6 +759,13 @@ void G_SpawnEntitiesFromString( void ) {
 	while( G_ParseSpawnVars() ) {
 		G_SpawnGEntityFromSpawnVars();
 	}	
+
+#ifdef	VIOL_VM
+	}
+	if (vio_enity.integer == 1) {
+		G_SpawnEntitiesFromFile(va("enity/%s.add", mapname.string), qfalse);
+	}
+#endif
 
 	level.spawning = qfalse;			// any future calls to G_Spawn*() will be errors
 }

@@ -88,6 +88,14 @@ centity_t			cg_entities[MAX_GENTITIES];
 weaponInfo_t		cg_weapons[MAX_WEAPONS];
 itemInfo_t			cg_items[MAX_ITEMS];
 
+#ifdef	VIOL_VM
+// xDiloc - main
+vmCvar_t	vio_fxportal;
+vmCvar_t	vio_drawups;
+vmCvar_t	vio_drawmovement;
+vmCvar_t	vio_drawaccel;
+vmCvar_t	vio_drawbbox;
+#endif
 
 vmCvar_t	cg_railTrailTime;
 vmCvar_t	cg_centertime;
@@ -206,22 +214,47 @@ typedef struct {
 } cvarTable_t;
 
 static cvarTable_t cvarTable[] = {
+#ifdef	VIOL_VM
+	// xDiloc - main
+	{ &vio_fxportal, "vio_fxportal", "1", CVAR_ARCHIVE },
+	{ &vio_drawups, "vio_drawups", "1", CVAR_ARCHIVE },
+	{ &vio_drawmovement, "vio_drawmovement", "1", CVAR_ARCHIVE },
+	{ &vio_drawaccel, "vio_drawaccel", "1", CVAR_ARCHIVE },
+	{ &vio_drawbbox, "vio_drawbbox", "0", CVAR_ARCHIVE },
+#endif
+
 	{ &cg_ignore, "cg_ignore", "0", 0 },	// used for debugging
+#ifdef	VIOL_VM
+	{ &cg_autoswitch, "cg_autoswitch", "0", CVAR_ARCHIVE },
+#else
 	{ &cg_autoswitch, "cg_autoswitch", "1", CVAR_ARCHIVE },
+#endif
 	{ &cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE },
 	{ &cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE },
 	{ &cg_fov, "cg_fov", "90", CVAR_ARCHIVE },
 	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
+#ifdef	VIOL_VM
+	{ &cg_shadows, "cg_shadows", "0", CVAR_ARCHIVE },
+#else
 	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE  },
+#endif
 	{ &cg_gibs, "cg_gibs", "1", CVAR_ARCHIVE  },
 	{ &cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE  },
 	{ &cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE  },
 	{ &cg_drawTimer, "cg_drawTimer", "0", CVAR_ARCHIVE  },
+#ifdef	VIOL_VM
+	{ &cg_drawFPS, "cg_drawFPS", "1", CVAR_ARCHIVE },
+#else
 	{ &cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE  },
+#endif
 	{ &cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE  },
 	{ &cg_draw3dIcons, "cg_draw3dIcons", "1", CVAR_ARCHIVE  },
 	{ &cg_drawIcons, "cg_drawIcons", "1", CVAR_ARCHIVE  },
+#ifdef	VIOL_VM
+	{ &cg_drawAmmoWarning, "cg_drawAmmoWarning", "0", CVAR_ARCHIVE },
+#else
 	{ &cg_drawAmmoWarning, "cg_drawAmmoWarning", "1", CVAR_ARCHIVE  },
+#endif
 	{ &cg_drawAttacker, "cg_drawAttacker", "1", CVAR_ARCHIVE  },
 	{ &cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
@@ -674,7 +707,12 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.watrOutSound = trap_S_RegisterSound( "sound/player/watr_out.wav", qfalse);
 	cgs.media.watrUnSound = trap_S_RegisterSound( "sound/player/watr_un.wav", qfalse);
 
+#ifdef	VIOL_VM
+	// xDiloc - jumppad sound (like it)
+	cgs.media.jumpPadSound = trap_S_RegisterSound ("sound/world/metal_jumppad.wav", qfalse );
+#else
 	cgs.media.jumpPadSound = trap_S_RegisterSound ("sound/world/jumppad.wav", qfalse );
+#endif
 
 	for (i=0 ; i<4 ; i++) {
 		Com_sprintf (name, sizeof(name), "sound/player/footsteps/step%i.wav", i+1);
@@ -828,6 +866,17 @@ static void CG_RegisterGraphics( void ) {
 	for ( i=0 ; i<11 ; i++) {
 		cgs.media.numberShaders[i] = trap_R_RegisterShader( sb_nums[i] );
 	}
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	cgs.media.portal_blue = trap_R_RegisterModel("models/portals/fx_blue.md3");
+	cgs.media.portal_orange = trap_R_RegisterModel("models/portals/fx_orange.md3");
+	cgs.media.portal_black = trap_R_RegisterModel("models/portals/fx_black.md3");
+
+	// xDiloc - bbox
+	cgs.media.bbox = trap_R_RegisterShader("bbox");
+	cgs.media.bbox_nocull = trap_R_RegisterShader("bbox_nocull");
+#endif
 
 	cgs.media.botSkillShaders[0] = trap_R_RegisterShader( "menu/art/skill1.tga" );
 	cgs.media.botSkillShaders[1] = trap_R_RegisterShader( "menu/art/skill2.tga" );
@@ -1893,6 +1942,12 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	cgs.levelStartTime = atoi( s );
 
 	CG_ParseServerinfo();
+
+#ifdef	VIOL_VM
+	// xDiloc - get qagame stuff
+	s = CG_ConfigString(31);
+	sscanf(s, "%i %i", &vio.physic, &vio.falldamage);
+#endif
 
 	// load the new map
 	CG_LoadingString( "collision map" );

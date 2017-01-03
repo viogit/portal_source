@@ -95,6 +95,33 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 	trap_UnlinkEntity (player);
 
 	VectorCopy ( origin, player->client->ps.origin );
+
+#ifdef	VIOL_VM
+	// xDiloc - teleport player
+	if (!noAngles) {
+		float		speed;
+		vec3_t		dir;
+
+		// no glitch
+		VectorCopy(player->client->oldVelocity, player->client->ps.velocity);
+		speed = sqrt(((player->client->ps.velocity[0])*(player->client->ps.velocity[0]))
+		+((player->client->ps.velocity[1])*(player->client->ps.velocity[1]))
+		+((player->client->ps.velocity[2])*(player->client->ps.velocity[2])));
+
+		// spit the player out
+		AngleVectors(angles, dir, NULL, NULL);
+
+		player->client->ps.velocity[0] = dir[0] * speed;
+		player->client->ps.velocity[1] = dir[1] * speed;
+		player->client->ps.velocity[2] = dir[2] * speed;
+
+		player->client->ps.pm_time = 100;	// hold time
+		player->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
+
+		// set angles
+		SetClientViewAngle(player, angles);
+	}
+#else
 	player->client->ps.origin[2] += 1;
 	if (!noAngles) {
 	// spit the player out
@@ -105,6 +132,7 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 	// set angles
 	SetClientViewAngle(player, angles);
 	}
+#endif
 	// toggle the teleport bit so the client knows to not lerp
 	player->client->ps.eFlags ^= EF_TELEPORT_BIT;
 	// kill anything at the destination

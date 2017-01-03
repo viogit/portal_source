@@ -3312,8 +3312,14 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		if (bs->teleport_time > FloatTime() - reactiontime) return;
 	}
 
+#ifdef	VIOL_VM
+	/* xDiloc: fix 'weapon number out of range' */
+	if (bs->weaponnum >= WP_MACHINEGUN && bs->weaponnum <= WP_BFG) {
+		trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
+#else
 	//get the weapon information
 	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
+#endif
 	//get the weapon specific aim accuracy and or aim skill
 	if (wi.number == WP_MACHINEGUN) {
 		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_MACHINEGUN, 0, 1);
@@ -3343,6 +3349,11 @@ void BotAimAtEnemy(bot_state_t *bs) {
 		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BFG10K, 0, 1);
 		aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_BFG10K, 0, 1);
 	}
+#ifdef	VIOL_VM
+	}
+	/* xDiloc: fix 'weapon number out of range' */
+#endif
+
 	//
 	if (aim_accuracy <= 0) aim_accuracy = 0.0001f;
 	//get the enemy entity information
@@ -3626,8 +3637,15 @@ void BotCheckAttack(bot_state_t *bs) {
 	if (bsptrace.fraction < 1 && bsptrace.ent != attackentity)
 		return;
 
+#ifdef	VIOL_VM
+	/* xDiloc: fix 'weapon number out of range' */
+	if (bs->weaponnum >= WP_MACHINEGUN && bs->weaponnum <= WP_BFG) {
+		trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
+	}
+#else
 	//get the weapon info
 	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
+#endif
 	//get the start point shooting from
 	VectorCopy(bs->origin, start);
 	start[2] += bs->cur_ps.viewheight;

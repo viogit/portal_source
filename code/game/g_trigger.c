@@ -44,6 +44,33 @@ void multi_wait( gentity_t *ent ) {
 // so wait for the delay time before firing
 void multi_trigger( gentity_t *ent, gentity_t *activator ) {
 	ent->activator = activator;
+
+#ifdef	VIOL_VM
+	if (ent->target) {
+		char	*str = ent->target;
+		int	i;
+
+		// tolower
+		for(i = 0; str[i] != '\0'; i++) {
+			str[i] = tolower(str[i]);
+		}
+
+		// check
+		if (strstr(str, "target_starttimer") != 0
+		 || strstr(str, "target_stoptimer") != 0
+		 || strstr(str, "target_checkpoint") != 0
+		 || strstr(str, "target_removeportal") != 0
+		 || strstr(str, "target_kill") != 0
+		) {
+			//G_Printf("target: \'%s\'\n", str);
+			ent->nextthink = 0;
+			ent->think = G_FreeEntity;
+			G_UseTargets(ent, ent->activator);
+			return;
+		}
+	}
+#endif
+
 	if ( ent->nextthink ) {
 		return;		// can't retrigger until the wait is over
 	}
@@ -247,7 +274,12 @@ void SP_target_push( gentity_t *self ) {
 	VectorScale (self->s.origin2, self->speed, self->s.origin2);
 
 	if ( self->spawnflags & 1 ) {
+#ifdef	VIOL_VM
+		// xDiloc - jumppad sound (like it)
+		self->noise_index = G_SoundIndex("sound/world/metal_jumppad.wav");
+#else
 		self->noise_index = G_SoundIndex("sound/world/jumppad.wav");
+#endif
 	} else {
 		self->noise_index = G_SoundIndex("sound/misc/windfly.wav");
 	}

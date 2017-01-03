@@ -25,6 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
 
+// xDiloc - data
+#include "../qcommon/vio_data.h"
+
 #define	GAME_VERSION		BASEGAME "-1"
 
 #define	DEFAULT_GRAVITY		800
@@ -210,7 +213,12 @@ typedef enum {
 	STAT_ARMOR,				
 	STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)
 	STAT_CLIENTS_READY,				// bit mask of clients wishing to exit the intermission (FIXME: configstring?)
+#ifdef	VIOL_VM
+	STAT_MAX_HEALTH,
+	STAT_JUMPTIME					// xDiloc - physic (promode)
+#else
 	STAT_MAX_HEALTH					// health / armor limit, changable by handicap
+#endif
 } statIndex_t;
 
 
@@ -320,6 +328,11 @@ typedef enum {
 	WP_CHAINGUN,
 #endif
 
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	WP_PORTALGUN,
+#endif
+
 	WP_NUM_WEAPONS
 } weapon_t;
 
@@ -376,6 +389,13 @@ typedef enum {
 	EV_NOAMMO,
 	EV_CHANGE_WEAPON,
 	EV_FIRE_WEAPON,
+
+#ifdef	VIOL_VM
+	EV_ALTFIRE_WEAPON,	// xDiloc - altfire
+	EV_PORTAL_ORANGE,	// xDiloc - portalgun
+	EV_PORTAL_BLUE,
+	EV_PORTAL_CLOSE,
+#endif
 
 	EV_USE_ITEM0,
 	EV_USE_ITEM1,

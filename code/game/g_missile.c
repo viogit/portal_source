@@ -453,6 +453,16 @@ void G_RunMissile( gentity_t *ent ) {
 	// get current position
 	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
 
+#ifdef	VIOL_VM
+	// xDiloc - teleport missle
+	if (vio.teleportmissle == 1) {
+		if (Vio_TriggersMissle(ent, origin)) {
+			G_RunThink(ent);
+			return;
+		}
+	}
+#endif
+
 	// if this missile bounced off an invulnerability sphere
 	if ( ent->target_ent ) {
 		passent = ent->target_ent->s.number;

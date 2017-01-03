@@ -62,6 +62,17 @@ typedef enum {
 
 #define SP_PODIUM_MODEL		"models/mapobjects/podium/podium4.md3"
 
+#ifdef	VIOL_VM
+// xDiloc - portalgun
+typedef enum
+{
+	PORTAL_BLUE,
+	PORTAL_ORANGE,
+	PORTAL_ALL,
+	PORTAL_NUM
+} portal_t;
+#endif
+
 //============================================================================
 
 typedef struct gentity_s gentity_t;
@@ -174,6 +185,11 @@ struct gentity_s {
 	float		random;
 
 	gitem_t		*item;			// for bonus items
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	gentity_t	*portals[PORTAL_NUM];
+#endif
 };
 
 
@@ -224,6 +240,10 @@ typedef struct {
 	int			spectatorClient;	// for chasecam and follow mode
 	int			wins, losses;		// tournament stats
 	qboolean	teamLeader;			// true when this client is a team leader
+#ifdef	VIOL_VM
+	// xDiloc - last weapon
+	int			lastWeapon;
+#endif
 } clientSession_t;
 
 //
@@ -271,6 +291,10 @@ struct gclient_s {
 	int			latched_buttons;
 
 	vec3_t		oldOrigin;
+#ifdef	VIOL_VM
+	// xDiloc - teleport player
+	vec3_t		oldVelocity;
+#endif
 
 	// sum up damage over an entire frame, so
 	// shotgun blasts give a single big kick
@@ -317,6 +341,10 @@ struct gclient_s {
 #endif
 
 	char		*areabits;
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	int		portaltime;
+#endif
 };
 
 
@@ -406,6 +434,11 @@ typedef struct {
 	gentity_t	*bodyQue[BODY_QUEUE_SIZE];
 #ifdef MISSIONPACK
 	int			portalSequence;
+#endif
+
+#ifdef	VIOL_VM
+	// xDiloc - defrag
+	int	player_defragstarttime[MAX_CLIENTS];
 #endif
 } level_locals_t;
 
@@ -579,13 +612,23 @@ qboolean SpotWouldTelefrag( gentity_t *spot );
 // g_svcmds.c
 //
 qboolean	ConsoleCommand( void );
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 void G_ProcessIPBans(void);
 qboolean G_FilterPacket (char *from);
+/* xDiloc - no longer support */
+#endif
 
 //
 // g_weapon.c
 //
+#ifdef	VIOL_VM
+// xDiloc - altfire
+void FireWeapon(gentity_t *ent, qboolean alt);
+#else
 void FireWeapon( gentity_t *ent );
+#endif
+
 #ifdef MISSIONPACK
 void G_StartKamikaze( gentity_t *ent );
 #endif
@@ -668,6 +711,18 @@ void Svcmd_AddBot_f( void );
 void Svcmd_BotList_f( void );
 void BotInterbreedEndMatch( void );
 
+
+#ifdef	VIOL_VM
+// vio_config.c
+void Vio_ConfigInit_f(const char *file);
+void Vio_ConfigCmd_f(void);
+
+// vio_portal.c
+qboolean Vio_TriggersMissle(gentity_t *ent, vec3_t origin);
+void G_Portal_Clear(gentity_t *parent, portal_t portalnum);
+void G_Portal_Create(gentity_t *parent, vec3_t origin, vec3_t normal, portal_t portalnum);
+#endif
+
 // ai_main.c
 #define MAX_FILEPATH			144
 
@@ -694,6 +749,13 @@ extern	level_locals_t	level;
 extern	gentity_t		g_entities[MAX_GENTITIES];
 
 #define	FOFS(x) ((size_t)&(((gentity_t *)0)->x))
+
+#ifdef	VIOL_VM
+// xDiloc - main cvar
+extern	vmCvar_t	mapname;
+extern	vmCvar_t	vio_config;
+extern	vmCvar_t	vio_enity;
+#endif
 
 extern	vmCvar_t	g_gametype;
 extern	vmCvar_t	g_dedicated;
@@ -728,8 +790,12 @@ extern	vmCvar_t	g_blood;
 extern	vmCvar_t	g_allowVote;
 extern	vmCvar_t	g_teamAutoJoin;
 extern	vmCvar_t	g_teamForceBalance;
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 extern	vmCvar_t	g_banIPs;
 extern	vmCvar_t	g_filterBan;
+/* xDiloc - no longer support */
+#endif
 extern	vmCvar_t	g_obeliskHealth;
 extern	vmCvar_t	g_obeliskRegenPeriod;
 extern	vmCvar_t	g_obeliskRegenAmount;

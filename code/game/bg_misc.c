@@ -347,6 +347,22 @@ gitem_t	bg_itemlist[] =
 /* sounds */ ""
 	},
 
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	{
+		"weapon_portalgun",
+		"sound/misc/w_pkup.wav",
+		{"models/weapons2/portalgun/portalgun.md3", NULL, NULL, NULL},
+		"icons/iconw_portalgun",
+		"Portal Gun",
+		0,
+		IT_WEAPON,
+		WP_PORTALGUN,
+		"",
+		""
+	},
+#endif
+
 	//
 	// AMMO ITEMS
 	//
@@ -1308,6 +1324,13 @@ char *eventnames[] = {
 	"EV_NOAMMO",
 	"EV_CHANGE_WEAPON",
 	"EV_FIRE_WEAPON",
+
+#ifdef	VIOL_VM
+	"EV_ALTFIRE_WEAPON",	// xDiloc - altfire
+	"EV_PORTAL_ORANGE",	// xDiloc - portalgun
+	"EV_PORTAL_BLUE",
+	"EV_PORTAL_CLOSE",
+#endif
 
 	"EV_USE_ITEM0",
 	"EV_USE_ITEM1",

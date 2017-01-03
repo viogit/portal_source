@@ -47,6 +47,82 @@ float	pm_spectatorfriction = 5.0f;
 
 int		c_pmove = 0;
 
+#ifdef	VIOL_VM
+// xDiloc - physic (promode)
+float	cpm_pm_jump_z;
+float	cpm_pm_airstopaccelerate;
+float	cpm_pm_aircontrol;
+float	cpm_pm_strafeaccelerate;
+float	cpm_pm_wishspeed;
+
+void Vio_initPhysic(void) {
+/* dev
+#ifdef CGAME
+	Com_Printf("cgame vio.physic %i\n", vio.physic);
+	Com_Printf("cgame vio.falldamage %i\n", vio.falldamage);
+#endif
+#ifdef QAGAME
+	// fine
+	Com_Printf("qagame vio.physic %i\n", vio.physic);
+#endif
+*/
+	if (vio.physic == 1) {
+		// cpm
+		cpm_pm_jump_z = 100;		// enable double-jump
+		cpm_pm_airstopaccelerate = 2.5;
+		cpm_pm_aircontrol = 150;
+		cpm_pm_strafeaccelerate = 70;
+		cpm_pm_wishspeed = 30;
+		pm_accelerate = 15.0f;
+		pm_friction = 8.0f;
+	} else {
+		// vq3
+		cpm_pm_jump_z = 0;		// turn off double-jump in vq3
+		cpm_pm_airstopaccelerate = 1;
+		cpm_pm_aircontrol = 0;
+		cpm_pm_strafeaccelerate = 1;
+		cpm_pm_wishspeed = 400;
+		pm_accelerate = 10.0f;
+		pm_friction = 6.0f;
+	}
+}
+
+void CPM_PM_Aircontrol(pmove_t *pm, vec3_t wishdir, float wishspeed) {
+	float	zspeed, speed, dot, k;
+	int	i;
+
+	if ((pm->ps->movementDir
+	 && pm->ps->movementDir != 4
+	 && pm->ps->movementDir != -4
+	 && pm->ps->movementDir != 12)
+	 || wishspeed == 0.0) {
+		// can't control movement if not moveing forward or backward
+		return;
+	}
+
+	zspeed = pm->ps->velocity[2];
+	pm->ps->velocity[2] = 0;
+	speed = VectorNormalize(pm->ps->velocity);
+
+	dot = DotProduct(pm->ps->velocity, wishdir);
+	k = 32;
+	k *= cpm_pm_aircontrol*dot*dot*pml.frametime;
+
+	// we can't change direction while slowing down
+	if (dot > 0) {
+		for (i = 0; i < 2; i++) {
+			pm->ps->velocity[i] = pm->ps->velocity[i] * speed + wishdir[i] * k;
+		}
+		VectorNormalize(pm->ps->velocity);
+	}
+
+	for (i = 0; i < 2; i++) {
+		pm->ps->velocity[i] *= speed;
+	}
+
+	pm->ps->velocity[2] = zspeed;
+}
+#endif
 
 /*
 ===============
@@ -378,6 +454,17 @@ static qboolean PM_CheckJump( void ) {
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
 	pm->ps->velocity[2] = JUMP_VELOCITY;
+
+#ifdef	VIOL_VM
+	// xDiloc - physic (promode)
+	if (vio.physic == 1) {
+		if (pm->ps->stats[STAT_JUMPTIME] > 0) {
+			pm->ps->velocity[2] += cpm_pm_jump_z;
+		}
+		pm->ps->stats[STAT_JUMPTIME] = 400;
+	}
+#endif
+
 	PM_AddEvent( EV_JUMP );
 
 	if ( pm->cmd.forwardmove >= 0 ) {
@@ -605,6 +692,11 @@ static void PM_AirMove( void ) {
 	float		wishspeed;
 	float		scale;
 	usercmd_t	cmd;
+#ifdef	VIOL_VM
+	// xDiloc - physic (promode)
+	float	accel;
+	float	wishspeed2;
+#endif
 
 	PM_Friction();
 
@@ -632,8 +724,35 @@ static void PM_AirMove( void ) {
 	wishspeed = VectorNormalize(wishdir);
 	wishspeed *= scale;
 
+#ifdef	VIOL_VM
+	// xDiloc - physic promode (air control)
+	if (vio.physic == 1) {
+		wishspeed2 = wishspeed;
+
+		if (DotProduct(pm->ps->velocity, wishdir) < 0) {
+			accel = cpm_pm_airstopaccelerate;
+		} else {
+			accel = pm_airaccelerate;
+		}
+
+		if ((pm->ps->movementDir == 2 || pm->ps->movementDir == -2 || pm->ps->movementDir == 10)
+		 || (pm->ps->movementDir == 6 || pm->ps->movementDir == -6 || pm->ps->movementDir == 14)) {
+			if (wishspeed > cpm_pm_wishspeed) {
+				wishspeed = cpm_pm_wishspeed;
+			}
+			accel = cpm_pm_strafeaccelerate;
+		}
+
+		PM_Accelerate(wishdir, wishspeed, accel);
+		CPM_PM_Aircontrol(pm, wishdir, wishspeed2);
+	} else {
+		// not on ground, so little effect on velocity
+		PM_Accelerate(wishdir, wishspeed, pm_airaccelerate);
+	}
+#else
 	// not on ground, so little effect on velocity
 	PM_Accelerate (wishdir, wishspeed, pm_airaccelerate);
+#endif
 
 	// we may have a ground plane that is very steep, even
 	// though we don't have a groundentity
@@ -980,7 +1099,12 @@ static void PM_CrashLand( void ) {
 
 	// SURF_NODAMAGE is used for bounce pads where you don't ever
 	// want to take damage or play a crunch sound
+#ifdef	VIOL_VM
+	// xDiloc - falldamage
+	if (!(pml.groundTrace.surfaceFlags & SURF_NODAMAGE) && (vio.falldamage == 1)) {
+#else
 	if ( !(pml.groundTrace.surfaceFlags & SURF_NODAMAGE) )  {
+#endif
 		if ( delta > 60 ) {
 			PM_AddEvent( EV_FALL_FAR );
 		} else if ( delta > 40 ) {
@@ -1605,8 +1729,34 @@ static void PM_Weapon( void ) {
 		return;
 	}
 
+#ifdef	VIOL_VM
+	// xDiloc - altfire
+	if (pm->cmd.buttons & BUTTON_NEGATIVE) {
+/*		switch(pm->ps->weapon){
+		case WP_GAUNTLET:
+		case WP_LIGHTNING:
+		case WP_SHOTGUN:
+		case WP_MACHINEGUN:
+		case WP_GRENADE_LAUNCHER:
+		case WP_ROCKET_LAUNCHER:
+		case WP_PLASMAGUN:
+		case WP_RAILGUN:
+		case WP_BFG:
+		case WP_GRAPPLING_HOOK:
+			pm->cmd.buttons &= ~BUTTON_NEGATIVE;
+			break;
+		} */
+		if (pm->ps->weapon != WP_PORTALGUN) {
+			pm->cmd.buttons &= ~BUTTON_NEGATIVE;
+		}
+	}
+
+	// xDiloc - altfire
+	if (!(pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_NEGATIVE))) {
+#else
 	// check for fire
 	if ( ! (pm->cmd.buttons & BUTTON_ATTACK) ) {
+#endif
 		pm->ps->weaponTime = 0;
 		pm->ps->weaponstate = WEAPON_READY;
 		return;
@@ -1639,8 +1789,18 @@ static void PM_Weapon( void ) {
 		pm->ps->ammo[ pm->ps->weapon ]--;
 	}
 
+#ifdef	VIOL_VM
+	// xDiloc - altfire
+	if (pm->cmd.buttons & BUTTON_NEGATIVE) {
+		PM_AddEvent(EV_ALTFIRE_WEAPON);
+	} else {
+		// fire weapon
+		PM_AddEvent(EV_FIRE_WEAPON);
+	}
+#else
 	// fire weapon
 	PM_AddEvent( EV_FIRE_WEAPON );
+#endif
 
 	switch( pm->ps->weapon ) {
 	default:
@@ -1683,6 +1843,13 @@ static void PM_Weapon( void ) {
 		break;
 	case WP_CHAINGUN:
 		addTime = 30;
+		break;
+#endif
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	case WP_PORTALGUN:
+		addTime = 150;
 		break;
 #endif
 	}
@@ -1967,6 +2134,16 @@ void PmoveSingle (pmove_t *pmove) {
 
 	PM_DropTimers();
 
+#ifdef	VIOL_VM
+	Vio_initPhysic();
+
+	// xDiloc - physic promode (double-jump timer)
+	if (vio.physic == 1) {
+		if (pm->ps->stats[STAT_JUMPTIME] > 0) {
+			pm->ps->stats[STAT_JUMPTIME] -= pml.msec;
+		}
+	}
+#endif
 #ifdef MISSIONPACK
 	if ( pm->ps->powerups[PW_INVULNERABILITY] ) {
 		PM_InvulnerabilityMove();

@@ -920,6 +920,8 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 
 	trap_GetUserinfo( clientNum, userinfo, sizeof( userinfo ) );
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
  	// IP filtering
  	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=500
  	// recommanding PB based IP / GUID banning, the builtin system is pretty limited
@@ -928,6 +930,8 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 	if ( G_FilterPacket( value ) ) {
 		return "You are banned from this server.";
 	}
+/* xDiloc - no longer support */
+#endif
 
   // we don't check password for bots and local client
   // NOTE: local client <-> "ip" "localhost"
@@ -976,7 +980,18 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 
 	// don't do the "xxx connected" messages if they were caried over from previous level
 	if ( firstTime ) {
+#ifdef	VIOL_VM
+		// xDiloc - online
+		int	online;
+
+		trap_SendServerCommand(-1, va("print \""PREFIX"%s" S_COLOR_WHITE " connected\n\"", client->pers.netname));
+
+		// xDiloc - online
+		online = level.numConnectedClients + 1;
+		trap_SendServerCommand(-1, va("print \""PREFIX"Online ^5%i ^7players.\n\"", online));
+#else
 		trap_SendServerCommand( -1, va("print \"%s" S_COLOR_WHITE " connected\n\"", client->pers.netname) );
+#endif
 	}
 
 	if ( g_gametype.integer >= GT_TEAM &&
@@ -1008,6 +1023,10 @@ void ClientBegin( int clientNum ) {
 	gentity_t	*ent;
 	gclient_t	*client;
 	int			flags;
+#ifdef	VIOL_VM
+	// xDiloc - info start
+	char		*namephys;
+#endif
 
 	ent = g_entities + clientNum;
 
@@ -1044,6 +1063,16 @@ void ClientBegin( int clientNum ) {
 	}
 	G_LogPrintf( "ClientBegin: %i\n", clientNum );
 
+#ifdef	VIOL_VM
+	// xDiloc - info start
+	if (vio.physic == 1) {
+		namephys = "CPM";
+	} else {
+		namephys = "VQ3";
+	}
+	trap_SendServerCommand(ent - g_entities, va("print \"\n Config: %s ^5(^7%s^5)\n\n\"", vio.description, namephys));
+#endif
+
 	// count current clients and rank for scoreboard
 	CalculateRanks();
 }
@@ -1073,6 +1102,12 @@ void ClientSpawn(gentity_t *ent) {
 	int		accuracy_hits, accuracy_shots;
 	int		eventSequence;
 	char	userinfo[MAX_INFO_STRING];
+#ifdef	VIOL_VM
+//#ifdef Q3_VM
+	char	startweap[MAX_TOKEN_CHARS];
+	char	*weap;
+//#endif
+#endif
 
 	index = ent - g_entities;
 	client = ent->client;
@@ -1180,6 +1215,63 @@ void ClientSpawn(gentity_t *ent) {
 
 	client->ps.clientNum = index;
 
+#ifdef	VIOL_VM
+//#ifdef Q3_VM
+	// xDiloc - start weapon
+//	Com_Printf("%s\n", vio.startweapon);
+	Q_strncpyz(startweap, vio.startweapon, sizeof(startweap));
+//	Com_Printf("%s\n", startweap);
+
+	weap = strtok(startweap, " |");
+	while (weap != NULL) {
+		if (Q_stricmp(weap, "WP_GAUNTLET") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_GAUNTLET);
+			client->ps.ammo[WP_GAUNTLET] = vio.ammo_gauntlet;
+		}
+		if (Q_stricmp(weap, "WP_MACHINEGUN") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_MACHINEGUN);
+			client->ps.ammo[WP_MACHINEGUN] = vio.ammo_machinegun;
+		}
+		if (Q_stricmp(weap, "WP_SHOTGUN") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_SHOTGUN);
+			client->ps.ammo[WP_SHOTGUN] = vio.ammo_shotgun;
+		}
+		if (Q_stricmp(weap, "WP_GRENADE_LAUNCHER") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_GRENADE_LAUNCHER);
+			client->ps.ammo[WP_GRENADE_LAUNCHER] = vio.ammo_grenade;
+		}
+		if (Q_stricmp(weap, "WP_ROCKET_LAUNCHER") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_ROCKET_LAUNCHER);
+			client->ps.ammo[WP_ROCKET_LAUNCHER] = vio.ammo_rocket;
+		}
+		if (Q_stricmp(weap, "WP_LIGHTNING") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_LIGHTNING);
+			client->ps.ammo[WP_LIGHTNING] = vio.ammo_lightning;
+		}
+		if (Q_stricmp(weap, "WP_RAILGUN") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_RAILGUN);
+			client->ps.ammo[WP_RAILGUN] = vio.ammo_railgun;
+		}
+		if (Q_stricmp(weap, "WP_PLASMAGUN") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_PLASMAGUN);
+			client->ps.ammo[WP_PLASMAGUN] = vio.ammo_plasmagun;
+		}
+		if (Q_stricmp(weap, "WP_BFG") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_BFG);
+			client->ps.ammo[WP_BFG] = vio.ammo_bfg;
+		}
+		if (Q_stricmp(weap, "WP_GRAPPLING_HOOK") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_GRAPPLING_HOOK);
+			client->ps.ammo[WP_GRAPPLING_HOOK] = vio.ammo_hook;
+		}
+		if (Q_stricmp(weap, "WP_PORTALGUN") == 0 || Q_stricmp(weap, "WP_ALL") == 0) {
+			client->ps.stats[STAT_WEAPONS] |= (1 << WP_PORTALGUN);
+			client->ps.ammo[WP_PORTALGUN] = vio.ammo_portal;
+		}
+		weap = strtok(NULL, " |");
+	}
+//#endif
+#else
 	client->ps.stats[STAT_WEAPONS] = ( 1 << WP_MACHINEGUN );
 	if ( g_gametype.integer == GT_TEAM ) {
 		client->ps.ammo[WP_MACHINEGUN] = 50;
@@ -1190,6 +1282,7 @@ void ClientSpawn(gentity_t *ent) {
 	client->ps.stats[STAT_WEAPONS] |= ( 1 << WP_GAUNTLET );
 	client->ps.ammo[WP_GAUNTLET] = -1;
 	client->ps.ammo[WP_GRAPPLING_HOOK] = -1;
+#endif
 
 	// health will count down towards max_health
 	ent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH] + 25;
@@ -1222,6 +1315,24 @@ void ClientSpawn(gentity_t *ent) {
 			client->ps.weaponstate = WEAPON_READY;
 			// fire the targets of the spawn point
 			G_UseTargets(spawnPoint, ent);
+#ifdef	VIOL_VM
+			// xDiloc - last weapon
+			if (client->sess.lastWeapon <= WP_NONE
+			 || client->sess.lastWeapon >= WP_NUM_WEAPONS
+			 || client->ps.ammo[client->sess.lastWeapon] == 0) {
+				// select the highest weapon number available, after any spawn given items have fired
+				client->ps.weapon = WP_NONE;
+
+				for (i = WP_NUM_WEAPONS - 1; i > 0; i--) {
+					if (client->ps.stats[STAT_WEAPONS] & (1 << i)) {
+						client->ps.weapon = i;
+						break;
+					}
+				}
+			} else {
+				client->ps.weapon = client->sess.lastWeapon;
+			}
+#else
 			// select the highest weapon number available, after any spawn given items have fired
 			client->ps.weapon = 1;
 
@@ -1231,6 +1342,7 @@ void ClientSpawn(gentity_t *ent) {
 					break;
 				}
 			}
+#endif
 			// positively link the client, even if the command times are weird
 			VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
 
@@ -1275,6 +1387,13 @@ void ClientDisconnect( int clientNum ) {
 	gentity_t	*ent;
 	gentity_t	*tent;
 	int			i;
+#ifdef	VIOL_VM
+	// xDiloc - online
+	int		online;
+
+	online = level.numConnectedClients - 1;
+	trap_SendServerCommand(-1, va("print \""PREFIX"Online ^5%i ^7players.\n\"", online));
+#endif
 
 	// cleanup if we are kicking a bot that
 	// hasn't spawned yet
@@ -1284,6 +1403,11 @@ void ClientDisconnect( int clientNum ) {
 	if (!ent->client || ent->client->pers.connected == CON_DISCONNECTED) {
 		return;
 	}
+
+#ifdef	VIOL_VM
+	// xDiloc - portalgun
+	G_Portal_Clear(ent, PORTAL_ALL);
+#endif
 
 	// stop any following clients
 	for ( i = 0 ; i < level.maxclients ; i++ ) {

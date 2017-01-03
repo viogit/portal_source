@@ -38,6 +38,13 @@ typedef struct {
 gentity_t		g_entities[MAX_GENTITIES];
 gclient_t		g_clients[MAX_CLIENTS];
 
+#ifdef	VIOL_VM
+// xDiloc - main cvar
+vmCvar_t	mapname;
+vmCvar_t	vio_config;
+vmCvar_t	vio_enity;
+#endif
+
 vmCvar_t	g_gametype;
 vmCvar_t	g_dmflags;
 vmCvar_t	g_fraglimit;
@@ -74,8 +81,12 @@ vmCvar_t	g_podiumDrop;
 vmCvar_t	g_allowVote;
 vmCvar_t	g_teamAutoJoin;
 vmCvar_t	g_teamForceBalance;
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 vmCvar_t	g_banIPs;
 vmCvar_t	g_filterBan;
+/* xDiloc - no longer support */
+#endif
 vmCvar_t	g_smoothClients;
 vmCvar_t	pmove_fixed;
 vmCvar_t	pmove_msec;
@@ -96,6 +107,12 @@ vmCvar_t	g_proxMineTimeout;
 #endif
 
 static cvarTable_t		gameCvarTable[] = {
+#ifdef	VIOL_VM
+	// xDiloc - main cvar
+	{ &vio_config,		"vio_config",	"portal.cfg",	CVAR_ARCHIVE, 0, qfalse },
+	{ &vio_enity,		"vio_enity",	"1",		CVAR_ARCHIVE, 0, qfalse },
+#endif
+
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, 0, qfalse },
 
@@ -130,8 +147,12 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_password, "g_password", "", CVAR_USERINFO, 0, qfalse  },
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated ban code */
 	{ &g_banIPs, "g_banIPs", "", CVAR_ARCHIVE, 0, qfalse  },
 	{ &g_filterBan, "g_filterBan", "1", CVAR_ARCHIVE, 0, qfalse  },
+/* xDiloc - no longer support */
+#endif
 
 	{ &g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, qfalse },
 
@@ -414,7 +435,18 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	G_RegisterCvars();
 
+#ifdef	VIOL_VM
+	// xDiloc - mapname
+	trap_Cvar_Register(&mapname, "mapname", "", CVAR_SERVERINFO | CVAR_ROM);
+	G_Printf("mapname: %s\n", mapname.string);
+
+	// xDiloc - config load
+	Vio_ConfigInit_f(vio_config.string);
+#else
+/* xDiloc - outdated ban code */
 	G_ProcessIPBans();
+/* xDiloc - no longer support */
+#endif
 
 	G_InitMemory();
 

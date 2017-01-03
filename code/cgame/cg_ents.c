@@ -991,6 +991,13 @@ static void CG_AddCEntity( centity_t *cent ) {
 		CG_TeamBase( cent );
 		break;
 	}
+
+#ifdef	VIOL_VM
+	// xDiloc - bbox
+	if (vio_drawbbox.integer == 1) {
+		Vio_DrawBoundingBox(cent);
+	}
+#endif
 }
 
 /*

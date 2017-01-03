@@ -700,9 +700,14 @@ static float CG_DrawAttacker( float y ) {
 	info = CG_ConfigString( CS_PLAYERS + clientNum );
 	name = Info_ValueForKey(  info, "n" );
 	y += size;
+#ifdef	VIOL_VM
+	CG_DrawSmallString(635 - (Q_PrintStrlen(name) * SMALLCHAR_WIDTH), y, name, 0.5);
+	return y + SMALLCHAR_HEIGHT + 4;
+#else
 	CG_DrawBigString( 640 - ( Q_PrintStrlen( name ) * BIGCHAR_WIDTH), y, name, 0.5 );
 
 	return y + BIGCHAR_HEIGHT + 2;
+#endif
 }
 
 /*
@@ -716,11 +721,17 @@ static float CG_DrawSnapshot( float y ) {
 
 	s = va( "time:%i snap:%i cmd:%i", cg.snap->serverTime, 
 		cg.latestSnapshotNum, cgs.serverCommandSequence );
+#ifdef	VIOL_VM
+	w = CG_DrawStrlen(s) * SMALLCHAR_WIDTH;
+	CG_DrawSmallString(635 - w, y + 2, s, 1.0F);
+	return y + SMALLCHAR_HEIGHT + 4;
+#else
 	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
 
 	CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 
 	return y + BIGCHAR_HEIGHT + 4;
+#endif
 }
 
 /*
@@ -759,13 +770,39 @@ static float CG_DrawFPS( float y ) {
 		fps = 1000 * FPS_FRAMES / total;
 
 		s = va( "%ifps", fps );
+#ifdef	VIOL_VM
+		w = CG_DrawStrlen(s) * SMALLCHAR_WIDTH;
+		CG_DrawSmallString(635 - w, y + 2, s, 1.0F);
+	}
+	return y + SMALLCHAR_HEIGHT + 4;
+#else
 		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
 
 		CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 	}
 
 	return y + BIGCHAR_HEIGHT + 4;
+#endif
 }
+
+#ifdef	VIOL_VM
+/*
+=================
+CG_Drawups
+
+xDiloc - draw ups
+=================
+*/
+static float CG_Drawups(float y) {
+	char	*s;
+	int	w;
+
+	s = va("%.0fups", cg.xyspeed);
+	w = CG_DrawStrlen(s) * SMALLCHAR_WIDTH;
+	CG_DrawSmallString(635 - w, y + 2, s, 1.0F);
+	return y + SMALLCHAR_HEIGHT + 4;
+}
+#endif
 
 /*
 =================
@@ -787,11 +824,17 @@ static float CG_DrawTimer( float y ) {
 	seconds -= tens * 10;
 
 	s = va( "%i:%i%i", mins, tens, seconds );
+#ifdef	VIOL_VM
+	w = CG_DrawStrlen(s) * SMALLCHAR_WIDTH;
+	CG_DrawSmallString(635 - w, y + 2, s, 1.0F);
+	return y + SMALLCHAR_HEIGHT + 4;
+#else
 	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
 
 	CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 
 	return y + BIGCHAR_HEIGHT + 4;
+#endif
 }
 
 
@@ -990,6 +1033,12 @@ static void CG_DrawUpperRight(stereoFrame_t stereoFrame)
 	if (cg_drawFPS.integer && (stereoFrame == STEREO_CENTER || stereoFrame == STEREO_RIGHT)) {
 		y = CG_DrawFPS( y );
 	}
+#ifdef	VIOL_VM
+	// xDiloc - draw ups
+	if (vio_drawups.integer == 1) {
+		y = CG_Drawups(y);
+	}
+#endif
 	if ( cg_drawTimer.integer ) {
 		y = CG_DrawTimer( y );
 	}
@@ -1754,7 +1803,11 @@ void CG_CenterPrint( const char *str, int y, int charWidth ) {
 
 	cg.centerPrintTime = cg.time;
 	cg.centerPrintY = y;
+#ifdef	VIOL_VM
+	cg.centerPrintCharWidth = SMALLCHAR_WIDTH;
+#else
 	cg.centerPrintCharWidth = charWidth;
+#endif
 
 	// count the number of lines for centering
 	cg.centerPrintLines = 1;
@@ -1794,7 +1847,11 @@ static void CG_DrawCenterString( void ) {
 
 	start = cg.centerPrint;
 
+#ifdef	VIOL_VM
+	y = cg.centerPrintY - cg.centerPrintLines * SMALLCHAR_HEIGHT / 2;
+#else
 	y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
+#endif
 
 	while ( 1 ) {
 		char linebuffer[1024];
@@ -1818,8 +1875,13 @@ static void CG_DrawCenterString( void ) {
 
 		x = ( SCREEN_WIDTH - w ) / 2;
 
+#ifdef	VIOL_VM
+		CG_DrawStringExt(x, y, linebuffer, color, qfalse, qfalse,
+		SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0);
+#else
 		CG_DrawStringExt( x, y, linebuffer, color, qfalse, qtrue,
 			cg.centerPrintCharWidth, (int)(cg.centerPrintCharWidth * 1.5), 0 );
+#endif
 
 		y += cg.centerPrintCharWidth * 1.5;
 #endif
@@ -2504,6 +2566,155 @@ void CG_DrawTimedMenus( void ) {
 	}
 }
 #endif
+
+#ifdef	VIOL_VM
+/*
+=================
+CG_DrawMovement
+
+xDiloc - draw movement
+=================
+*/
+static void CG_DrawMovement(void) {
+	usercmd_t cmd = { 0 };
+	char	str1[32] = { 0 }, str2[32] = { 0 };
+	float	w1 = 0.0f, w2 = 0.0f, height = 0.0f;
+	int	moveDir = cg.snap->ps.movementDir;
+
+	// RAZTODO: works with demo playback??
+	if (!cg.snap) {
+		return;
+	}
+
+	if (cg.clientNum == cg.predictedPlayerState.clientNum && !cg.demoPlayback) {
+		trap_GetUserCmd(trap_GetCurrentCmdNumber(), &cmd);
+	} else {
+		if ((cg.snap->ps.pm_flags & PMF_JUMP_HELD)) {
+			cmd.upmove = 1;
+		} else if ((cg.snap->ps.pm_flags & PMF_DUCKED)){
+			cmd.upmove = -1;
+		}
+
+		if (cg.xyspeed < 10) {
+			moveDir = -1;
+		}
+
+		switch (moveDir) {
+		case 0: // W
+			cmd.forwardmove = 1;
+			break;
+		case 1: // WA
+			cmd.forwardmove = 1;
+			cmd.rightmove = -1;
+			break;
+		case 2: // A
+			cmd.rightmove = -1;
+			break;
+		case 3: // AS
+			cmd.rightmove = -1;
+			cmd.forwardmove = -1;
+			break;
+		case 4: // S
+			cmd.forwardmove = -1;
+			break;
+		case 5: // SD
+			cmd.forwardmove = -1;
+			cmd.rightmove = 1;
+			break;
+		case 6: // D
+			cmd.rightmove = 1;
+			break;
+		case 7: // DW
+			cmd.rightmove = 1;
+			cmd.forwardmove = 1;
+			break;
+		default:
+			break;
+		}
+	}
+
+	Com_sprintf(str1, sizeof(str1), "^%cv ^%cW ^%c^",
+	(cmd.upmove < 0) ? COLOR_RED : COLOR_BLACK,
+	(cmd.forwardmove > 0) ? COLOR_RED : COLOR_BLACK,
+	(cmd.upmove > 0) ? COLOR_RED : COLOR_BLACK);
+	Com_sprintf(str2, sizeof(str2), "^%cA ^%cS ^%cD",
+	(cmd.rightmove < 0) ? COLOR_RED : COLOR_BLACK,
+	(cmd.forwardmove < 0) ? COLOR_RED : COLOR_BLACK,
+	(cmd.rightmove > 0) ? COLOR_RED : COLOR_BLACK);
+
+	w1 = SMALLCHAR_WIDTH * CG_DrawStrlen("v W ^");
+	w2 = SMALLCHAR_WIDTH * CG_DrawStrlen("A S D");
+	height = SMALLCHAR_HEIGHT;
+	CG_DrawSmallString(320 - (w1 / 2), 310, str1, 1.0F);
+	CG_DrawSmallString(320 - (w2 / 2), 310 + height, str2, 1.0F);
+}
+
+/*
+=================
+CG_DrawAccel
+
+xDiloc - draw accel
+=================
+*/
+#define NUM_ACCEL_SAMPLES (8)
+void CG_DrawAccel(void) {
+	float		accel = 0.0f, maxAccel = 0.0f, speed = 0.0f, avgAccel = 0.0f;
+	static float	lastSpeed = 0.0f, accelSamples[NUM_ACCEL_SAMPLES] = { 0.0f };
+	vec3_t		currentVelocity;
+	playerState_t	*ps = &cg.predictedPlayerState;
+	int		i = 0;
+	float		percent = 0.0f;
+	float		x, y;
+	// colors
+//	vec4_t		cBlack = {0, 0, 0, 1};
+	vec4_t		cBlackOp = {0, 0, 0, 0.4};
+	vec4_t		cOrange = {1, 0.6, 0, 1};
+	vec4_t		cBlue = {0, 0.6, 1, 1};
+
+	VectorCopy(ps->velocity, currentVelocity);
+	currentVelocity[2] = 0.0f;
+	speed = VectorLength(currentVelocity);
+
+	accel = speed - lastSpeed;
+	maxAccel = 320 / 125; // ups / fps?
+
+	// store for next frame
+	lastSpeed = speed;
+
+	memcpy(&accelSamples[0], &accelSamples[1], sizeof(float)*(NUM_ACCEL_SAMPLES - 1));
+	accelSamples[NUM_ACCEL_SAMPLES - 1] = accel;
+
+	for (i = 0; i < NUM_ACCEL_SAMPLES; i++) {
+		avgAccel += accelSamples[i];
+	}
+
+	avgAccel /= (float)NUM_ACCEL_SAMPLES;
+	percent = Com_Clamp(-1.0f, 1.0f, avgAccel / maxAccel);
+
+	// xDiloc - draw the background
+	x = 320.0f;
+	y = 350.0f;
+//	CG_FillRect(x - 128.5f, y - 0.5f, 0.5f, 11.0f, cBlack);
+//	CG_FillRect(x + 128.0f, y - 0.5f, 0.5f, 11.0f, cBlack);
+//	CG_FillRect(x - 128.0f, y - 0.5f, 256.0f, 0.5f, cBlack);
+//	CG_FillRect(x - 128.0f, y + 10.0f, 256.0f, 0.5f, cBlack);
+
+	CG_FillRect(x - 128.0f, y, 256.0f, 10.0f, cBlackOp);
+
+	if (percent > 0.0f) {
+		CG_FillRect(x, y, 128.0f * percent, 10.0f, cOrange);
+	}
+
+	if (percent < 0.0f) {
+		// small fix ioq3 not work negative float for CG_FillRect
+		percent = 0 - percent;
+		CG_FillRect(x - 128.0f * percent, y, 128.0f * percent, 10.0f, cBlue);
+	}
+
+//	CG_Printf("%f\n", percent);
+}
+#endif
+
 /*
 =================
 CG_Draw2D
@@ -2584,6 +2795,17 @@ static void CG_Draw2D(stereoFrame_t stereoFrame)
 	CG_DrawTeamVote();
 
 	CG_DrawLagometer();
+
+#ifdef	VIOL_VM
+	// xDiloc - draw movement
+	if(vio_drawmovement.integer == 1) {
+		CG_DrawMovement();
+	}
+	// xDiloc - draw accel
+	if(vio_drawaccel.integer == 1) {
+		CG_DrawAccel();
+	}
+#endif
 
 #ifdef MISSIONPACK
 	if (!cg_paused.integer) {

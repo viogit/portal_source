@@ -90,9 +90,13 @@ extern vmCvar_t	ui_server14;
 extern vmCvar_t	ui_server15;
 extern vmCvar_t	ui_server16;
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 extern vmCvar_t	ui_cdkey;
 extern vmCvar_t	ui_cdkeychecked;
 extern vmCvar_t	ui_ioq3;
+/* xDiloc - no longer support */
+#endif
 
 
 //
@@ -380,12 +384,16 @@ extern void UI_CinematicsMenu_Cache( void );
 extern void UI_ModsMenu( void );
 extern void UI_ModsMenu_Cache( void );
 
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 //
 // ui_cdkey.c
 //
 extern void UI_CDKeyMenu( void );
 extern void UI_CDKeyMenu_Cache( void );
 extern void UI_CDKeyMenu_f( void );
+/* xDiloc - no longer support */
+#endif
 
 //
 // ui_playermodel.c
@@ -679,10 +687,15 @@ void			trap_LAN_ClearPing( int n );
 void			trap_LAN_GetPing( int n, char *buf, int buflen, int *pingtime );
 void			trap_LAN_GetPingInfo( int n, char *buf, int buflen );
 int				trap_MemoryRemaining( void );
+
+#ifndef	VIOL_VM
+/* xDiloc - outdated cdkey code */
 void			trap_GetCDKey( char *buf, int buflen );
 void			trap_SetCDKey( char *buf );
 
 qboolean               trap_VerifyCDKey( const char *key, const char *chksum);
+/* xDiloc - no longer support */
+#endif
 
 void			trap_SetPbClStatus( int status );
 
